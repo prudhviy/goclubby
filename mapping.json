@@ -1,0 +1,10 @@
+mapping = {
+    "clubbed.js" : [
+	{ "./hi.js"    : false },
+	{ "./file1.js" : false }
+    ],
+    "a.js" : [
+	{ "./hi.js"    : false },
+	{ "./file2.js" : false }
+    ]
+}
