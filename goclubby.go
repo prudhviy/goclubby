@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"log"
-	"fmt"
+	"fmt" 
 	"runtime"
 	"flag"
 )
@@ -19,9 +19,13 @@ func server_init(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+
+	// make sure app uses all cores
 	flag.Parse()
 	runtime.GOMAXPROCS(*numCores)
+
 	fmt.Printf("goclubby server running at http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
+
 	http.HandleFunc("/", server_init)
 	err := http.ListenAndServe("0.0.0.0:8000", nil)
 	if err != nil {
