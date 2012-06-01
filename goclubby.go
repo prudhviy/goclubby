@@ -35,14 +35,12 @@ func concatResource(in chan string, numFiles int) (minifiedFile string) {
     for fileContent := range in {
         temp = fileContent
         minifiedFile = minifiedFile + temp
-        fmt.Printf("received file: %s\n", temp)
         count = count + 1
         if count == numFiles {
             close(in)
         }
     }
 
-    fmt.Printf("end of concatResource\n")
     return 
 }
 
@@ -51,11 +49,11 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
 
     recv := make(chan string, len(files))
     for _, path := range files {
-        fmt.Printf("path: %s\n", path)
         go readResource(path, recv)
     }
     minifiedFile := concatResource(recv, len(files))
-    fmt.Printf("finally minifiedFile: %s\n", minifiedFile)
+
+    w.Header().Set("Server", "goclubby")
     io.WriteString(w, minifiedFile + "\n")
 }
 
