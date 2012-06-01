@@ -61,8 +61,6 @@ func concatResource(in chan string, numFiles int) (clubbedFile string) {
 }
 
 func serverInit(w http.ResponseWriter, req *http.Request) {
-    fmt.Printf("Request- %s %s\n", req.URL, time.Now())
-
     // same channel is used for communication between
     // readResource goroutine and concatResource function
     recv := make(chan string, len(files))
@@ -77,6 +75,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
 
     w.Header().Set("Server", "goclubby/0.1")
     io.WriteString(w, minifiedFile + "\n")
+    fmt.Printf("Request- %s %s\n", req.URL, time.Now())
 }
 
 func main() {
