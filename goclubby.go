@@ -18,7 +18,7 @@ import (
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var files = [2]string{"/tests/a.js", "/tests/b.js"}
+var files = [6]string{"/tests/a.js", "/tests/b.js", "/tests/Browser.js", "/tests/pp_domUtils.js", "/tests/pp_xmlhttp.js", "/tests/pp_opendoc.js"}
 var basePath, pwdError = os.Getwd()
 
 func readResource(filePath string, out chan string, minify bool) {
@@ -44,15 +44,15 @@ func readResource(filePath string, out chan string, minify bool) {
     }
 }
 
-func writeResource(in chan string, numFiles int, w http.ResponseWriter) {
+func concatResource(in chan string, numFiles int) (minifiedFile string){
     count := 0
 
     for resourceString := range in {
         count = count + 1
-        io.WriteString(w, resourceString + "\n")
-
+        minifiedFile = minifiedFile + resourceString
+        
         if count == numFiles {
-            // close the channel so that for loop stops 
+            // close the channel so that for-loop stops 
             // listening for incoming items and breaks the loop 
             close(in)
         }
@@ -64,7 +64,7 @@ func writeResource(in chan string, numFiles int, w http.ResponseWriter) {
 func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     // same channel is used for communication between
-    // readResource goroutine and concatResource function
+    // readResource goroutine and writeResource function
     recv := make(chan string, len(files))
 
     for _, filePath := range files {
@@ -73,7 +73,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         go readResource(basePath + filePath, recv, false)
     }
 
-    writeResource(recv, len(files), w)
+    io.WriteString(w, concatResource(recv, len(files)) + "\n")
     fmt.Printf("Request- %s %s\n", req.URL, time.Now())
 }
 
