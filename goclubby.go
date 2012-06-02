@@ -44,13 +44,13 @@ func readResource(filePath string, out chan string, minify bool) {
     }
 }
 
-func concatResource(in chan string, numFiles int) (clubbedFile string) {
+func writeResource(in chan string, numFiles int, w http.ResponseWriter) {
     count := 0
 
-    for resourceData := range in {
-        clubbedFile = clubbedFile + resourceData
+    for resourceString := range in {
         count = count + 1
-        
+        io.WriteString(w, resourceString + "\n")
+
         if count == numFiles {
             // close the channel so that for loop stops 
             // listening for incoming items and breaks the loop 
@@ -62,6 +62,7 @@ func concatResource(in chan string, numFiles int) (clubbedFile string) {
 }
 
 func serverInit(w http.ResponseWriter, req *http.Request) {
+    w.Header().Set("Server", "goclubby/0.1")
     // same channel is used for communication between
     // readResource goroutine and concatResource function
     recv := make(chan string, len(files))
@@ -72,10 +73,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         go readResource(basePath + filePath, recv, false)
     }
 
-    minifiedFile := concatResource(recv, len(files))
-
-    w.Header().Set("Server", "goclubby/0.1")
-    io.WriteString(w, minifiedFile + "\n")
+    writeResource(recv, len(files), w)
     fmt.Printf("Request- %s %s\n", req.URL, time.Now())
 }
 
