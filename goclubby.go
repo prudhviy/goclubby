@@ -6,6 +6,7 @@ import (
     "io"
     "io/ioutil"
     "net/http"
+    "os"
     "os/exec"
     
     "log"
@@ -17,8 +18,8 @@ import (
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var files = [2]string{"tests/a.js", "tests/b.js"}
-var basePath = "/home/prudhviy/work/goclubby/"
+var files = [2]string{"/tests/a.js", "/tests/b.js"}
+var basePath, pwdError = os.Getwd()
 
 func readResource(filePath string, out chan string, minify bool) {
 
@@ -68,7 +69,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     for _, filePath := range files {
         // create a goroutine on every I/O operation so that
         // multiple I/O operations happen in parallel
-        go readResource(basePath + filePath, recv, true)
+        go readResource(basePath + filePath, recv, false)
     }
 
     minifiedFile := concatResource(recv, len(files))
