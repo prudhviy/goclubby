@@ -18,14 +18,20 @@ import (
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var files = [6]string{"/tests/a.js", "/tests/b.js", "/tests/Browser.js", "/tests/pp_domUtils.js", "/tests/pp_xmlhttp.js", "/tests/pp_opendoc.js"}
+var files = [6]string{"/tests/a.js", "/tests/b.js", "/tests/Browser.js",
+                      "/tests/pp_domUtils.js", "/tests/pp_xmlhttp.js",
+                      "/tests/pp_opendoc.js"}
 var basePath, pwdError = os.Getwd()
 
 func readResource(filePath string, out chan string, minify bool) {
 
     if minify {
         // get the minified byte data using closure compiler
-        resourceData, err := exec.Command("java", "-jar", "closure/compiler.jar", "--js", filePath ).Output()
+        resourceData, err := exec.Command("java", "-jar", 
+                                          "closure/compiler.jar", 
+                                          "--compilation_level", 
+                                          "WHITESPACE_ONLY",
+                                          "--js", filePath ).Output()
         if err != nil {
             log.Fatal(err)
         }
@@ -83,7 +89,8 @@ func main() {
     flag.Parse()
     runtime.GOMAXPROCS(*numCores)
 
-    fmt.Printf("goclubby server running at http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
+    fmt.Printf("goclubby server running at " +
+               "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
     http.HandleFunc("/", serverInit)
     err := http.ListenAndServe("0.0.0.0:8000", nil)
