@@ -18,7 +18,7 @@ import (
     //"reflect"
 )
 
-var Mapping interface {
+var Mapper interface {
 
 }
 
@@ -96,7 +96,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     recv := make(chan string)
 
     path := (*req.URL).Path
-    mapping := Mapping.(map[string]interface{})
+    mapping := Mapper.(map[string]interface{})
     temp := (mapping[path]).([]interface{})
     var numFiles int
     for k, v := range temp {
@@ -129,12 +129,12 @@ func readConfig() {
     //fmt.Printf("Mapping json: %s\n\n", mappingData)
 
     // decode json to Mapping data structure in go
-    err = json.Unmarshal(mappingData, &Mapping)
+    err = json.Unmarshal(mappingData, &Mapper)
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
     }
 
-    //fmt.Printf("Resource Mapping: %#v\n\n", Mapping.(map[string]interface{}))
+    //fmt.Printf("Resource Mapping: %#v\n\n", Mapper.(map[string]interface{}))
 }
 
 func main() {
