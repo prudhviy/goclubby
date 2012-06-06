@@ -15,6 +15,7 @@ import (
 
     "runtime"
     "flag"
+    //"reflect"
 )
 
 var Mapping interface {
@@ -31,8 +32,9 @@ var basePath, pwdError = os.Getwd()
 
 var mainPage = `<!DOCTYPE html>
 <html>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>goclubby test page</title>
 <script type="text/javascript" src="/file1.js"></script>
 <script type="text/javascript" src="/file2.js"></script>
 <script type="text/javascript" src="/file3.js"></script>
@@ -95,15 +97,23 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Content-Type", "application/javascript")
     // same channel is used for communication between
     // readResource goroutine and writeResource function
-    recv := make(chan string, len(files))
+    recv := make(chan string)
 
-    for _, filePath := range files {
-        // create a goroutine on every I/O operation so that
-        // multiple I/O operations happen in parallel
-        go readResource(basePath + filePath, recv, false)
+    path := (*req.URL).Path
+    mapping := Mapping.(map[string]interface{})
+    temp := (mapping[path]).([]interface{})
+    var numFiles int
+    for k, v := range temp {
+        numFiles = k
+        fileSlice := v.(map[string]interface{})
+        for filePath, _ := range fileSlice {
+            // create a goroutine on every I/O operation so that
+            // multiple I/O operations happen in parallel
+            go readResource(basePath + filePath, recv, false)    
+        }
     }
 
-    io.WriteString(w, concatResource(recv, len(files)) + "\n")
+    io.WriteString(w, concatResource(recv, numFiles + 1) + "\n")
     fmt.Printf("Request- %s %s\n", req.URL, time.Now())
 }
 
@@ -120,7 +130,7 @@ func readConfig() {
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
     }
-    fmt.Printf("Mapping json: %s\n\n", mappingData)
+    //fmt.Printf("Mapping json: %s\n\n", mappingData)
 
     // decode json to Mapping data structure in go
     err = json.Unmarshal(mappingData, &Mapping)
@@ -128,7 +138,7 @@ func readConfig() {
        fmt.Printf("Error occured in %s\n", err)
     }
 
-    fmt.Printf("Resource Mapping: %#v\n\n", Mapping.(map[string]interface{}))
+    //fmt.Printf("Resource Mapping: %#v\n\n", Mapping.(map[string]interface{}))
 }
 
 func main() {
