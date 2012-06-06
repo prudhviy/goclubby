@@ -24,10 +24,6 @@ var Mapping interface {
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var files = [6]string{"/test/a.js", "/test/b.js", "/test/Browser.js",
-                      "/test/pp_domUtils.js", "/test/pp_xmlhttp.js",
-                      "/test/pp_opendoc.js"}
-
 var basePath, pwdError = os.Getwd()
 
 var mainPage = `<!DOCTYPE html>
