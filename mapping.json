@@ -1,16 +1,16 @@
 {
-	"file1.js" : [
+	"/file1.js" : [
 		{ "/test/a.js" : false },
 		{ "/test/b.js" : false },
 		{ "/test/Browser.js" : false },
 		{ "/test/pp_domUtils.js" : false }
 	],
-	"file2.js" : [
+	"/file2.js" : [
 		{ "/test/pp_xmlhttp.js" : false },
 		{ "/test/pp_opendoc.js" : false },
 		{ "/test/pp_domUtils.js" : false }
 	],
-	"file3.js" : [
+	"/file3.js" : [
 		{ "/test/a.js" : false },
 		{ "/test/b.js" : false }
 	]
