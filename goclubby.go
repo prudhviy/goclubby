@@ -11,17 +11,39 @@ import (
     
     "log"
     "fmt" 
-    
+    "encoding/json"
+
     "runtime"
     "flag"
 )
 
+var Mapping interface {
+
+}
+
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var files = [6]string{"/tests/a.js", "/tests/b.js", "/tests/Browser.js",
-                      "/tests/pp_domUtils.js", "/tests/pp_xmlhttp.js",
-                      "/tests/pp_opendoc.js"}
+var files = [6]string{"/test/a.js", "/test/b.js", "/test/Browser.js",
+                      "/test/pp_domUtils.js", "/test/pp_xmlhttp.js",
+                      "/test/pp_opendoc.js"}
+
 var basePath, pwdError = os.Getwd()
+
+var mainPage = `<!DOCTYPE html>
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<head>
+<script type="text/javascript" src="/file1.js"></script>
+<script type="text/javascript" src="/file2.js"></script>
+<script type="text/javascript" src="/file3.js"></script>
+</head>
+<body>
+<b>
+Open up console and test
+</b>
+</body>
+</html>
+`
 
 func readResource(filePath string, out chan string, minify bool) {
 
@@ -69,6 +91,8 @@ func concatResource(in chan string, numFiles int) (minifiedFile string){
 
 func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Content-Type", "application/javascript")
     // same channel is used for communication between
     // readResource goroutine and writeResource function
     recv := make(chan string, len(files))
@@ -83,16 +107,45 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     fmt.Printf("Request- %s %s\n", req.URL, time.Now())
 }
 
+func MainPage(w http.ResponseWriter, req *http.Request) {
+    w.Header().Set("Server", "goclubby/0.1")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Content-Type", "text/html; charset=iso-8859-1")
+    io.WriteString(w, mainPage)
+}
+
+func readConfig() {
+    // read configuration from mapping.json
+    mappingData, err := ioutil.ReadFile("mapping.json")
+    if err != nil {
+       fmt.Printf("Error occured in %s\n", err)
+    }
+    fmt.Printf("Mapping json: %s\n\n", mappingData)
+
+    // decode json to Mapping data structure in go
+    err = json.Unmarshal(mappingData, &Mapping)
+    if err != nil {
+       fmt.Printf("Error occured in %s\n", err)
+    }
+
+    fmt.Printf("Resource Mapping: %#v\n\n", Mapping.(map[string]interface{}))
+}
+
 func main() {
 
     // make sure app uses all cores
     flag.Parse()
     runtime.GOMAXPROCS(*numCores)
 
+    readConfig()
+
     fmt.Printf("goclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
-    http.HandleFunc("/", serverInit)
+    http.HandleFunc("/", MainPage)
+    http.HandleFunc("/file1.js", serverInit)
+    http.HandleFunc("/file2.js", serverInit)
+    http.HandleFunc("/file3.js", serverInit)
     err := http.ListenAndServe("0.0.0.0:8000", nil)
     if err != nil {
         log.Fatal("In main(): ", err)
