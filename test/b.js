@@ -1,1 +1,1 @@
-console.log('javascript source file b.js')
+console.log('javascript source file b.js');
