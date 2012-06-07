@@ -1,17 +1,17 @@
 {
 	"/file1.js" : [
-		{ "/test/a.js" : false },
-		{ "/test/b.js" : false },
-		{ "/test/pp/Browser.js" : false },
-		{ "/test/pp/pp_domUtils.js" : false }
+		{ "/test/a.js" : 0 },
+		{ "/test/b.js" : 0 },
+		{ "/test/pp/Browser.js" : 0 },
+		{ "/test/pp/pp_domUtils.js" : 0 }
 	],
 	"/file2.js" : [
-		{ "/test/pp/pp_xmlhttp.js" : true },
-		{ "/test/pp/pp_opendoc.js" : true },
-		{ "/test/pp/pp_domUtils.js" : true }
+		{ "/test/pp/pp_xmlhttp.js" : 1 },
+		{ "/test/pp/pp_opendoc.js" : 1 },
+		{ "/test/pp/pp_domUtils.js" : 2 }
 	],
 	"/file3.js" : [
-		{ "/test/a.js" : false },
-		{ "/test/b.js" : false }
+		{ "/test/a.js" : 0 },
+		{ "/test/b.js" : 0 }
 	]
 }
