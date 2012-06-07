@@ -5,6 +5,7 @@ import (
     
     "io"
     "io/ioutil"
+    "bytes"
     "net/http"
     "os"
     "os/exec"
@@ -82,12 +83,13 @@ func readResource(out chan *Resource, filePath string, minify int, order int) {
     out <- msg
 }
 
-func concatResource(in chan *Resource, numFiles int) (minifiedFile string){
+func concatResource(in chan *Resource, numFiles int) (clubbedResource [][]byte) {
     count := 0
+    clubbedResource = make([][]byte, numFiles)
 
     for resource := range in {
         count = count + 1
-        minifiedFile = minifiedFile + string(resource.resourceData)
+        clubbedResource[resource.order] = resource.resourceData
         
         if count == numFiles {
             // close the channel so that for-loop stops 
@@ -96,7 +98,7 @@ func concatResource(in chan *Resource, numFiles int) (minifiedFile string){
         }
     }
 
-    return 
+    return
 }
 
 func serverInit(w http.ResponseWriter, req *http.Request) {
@@ -120,7 +122,10 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         }
     }
 
-    io.WriteString(w, concatResource(recv, numFiles + 1) + "\n")
+    clubbedResource := concatResource(recv, numFiles + 1)
+    response := string(bytes.Join(clubbedResource, []byte{}))
+
+    io.WriteString(w, response)
     fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
 }
 
