@@ -43,7 +43,7 @@ Open up console and test
 </html>
 `
 
-func readResource(filePath string, out chan string, minify bool) {
+func readResource(out chan string, filePath string, minify bool) {
 
     if minify {
         // get the minified byte data using closure compiler
@@ -104,7 +104,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
             // multiple I/O operations happen in parallel
-            go readResource(basePath + filePath, recv, minify.(bool))    
+            go readResource(recv, basePath + filePath, minify.(bool))    
         }
     }
 
