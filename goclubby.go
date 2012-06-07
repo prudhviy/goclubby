@@ -95,17 +95,16 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     // readResource goroutine and writeResource function
     recv := make(chan string)
 
-    path := (*req.URL).Path
     mapping := Mapper.(map[string]interface{})
-    temp := (mapping[path]).([]interface{})
+    temp := (mapping[req.URL.Path]).([]interface{})
     var numFiles int
     for k, v := range temp {
         numFiles = k
         fileSlice := v.(map[string]interface{})
-        for filePath, _ := range fileSlice {
+        for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
             // multiple I/O operations happen in parallel
-            go readResource(basePath + filePath, recv, false)    
+            go readResource(basePath + filePath, recv, minify.(bool))    
         }
     }
 
