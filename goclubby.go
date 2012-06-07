@@ -22,13 +22,18 @@ var Mapper interface {
 
 }
 
+type Resource struct {
+    resourceData []byte
+    order          int
+}
+
 var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
                                       2: "SIMPLE_OPTIMIZATIONS",
                                       3: "ADVANCED_OPTIMIZATIONS"}
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
-var basePath, pwdError = os.Getwd()
+var basePath, _ = os.Getwd()
 
 var mainPage = `<!DOCTYPE html>
 <html>
@@ -47,8 +52,9 @@ Open up console and test
 </html>
 `
 
-func readResource(out chan string, filePath string, minify int) {
-
+func readResource(out chan *Resource, filePath string, minify int, order int) {
+    var msg *Resource = new(Resource)
+    
     if minify == 0 {
         // read the byte data normally
         resourceData, err := ioutil.ReadFile(filePath)
@@ -56,7 +62,7 @@ func readResource(out chan string, filePath string, minify int) {
            fmt.Printf("In %s file, Error occured\n", filePath)
         }
 
-        out <- string(resourceData)
+        (*msg).resourceData = resourceData
     } else {
         // get the minified byte data using closure compiler
         resourceData, err := exec.Command("java", "-jar", 
@@ -68,16 +74,20 @@ func readResource(out chan string, filePath string, minify int) {
             log.Fatal(err)
         }
 
-        out <- string(resourceData)
+        (*msg).resourceData = resourceData
     }
+
+    (*msg).order = order
+
+    out <- msg
 }
 
-func concatResource(in chan string, numFiles int) (minifiedFile string){
+func concatResource(in chan *Resource, numFiles int) (minifiedFile string){
     count := 0
 
-    for resourceString := range in {
+    for resource := range in {
         count = count + 1
-        minifiedFile = minifiedFile + resourceString
+        minifiedFile = minifiedFile + string(resource.resourceData)
         
         if count == numFiles {
             // close the channel so that for-loop stops 
@@ -93,25 +103,25 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
     w.Header().Set("Content-Type", "application/javascript")
+    var numFiles int
     // same channel is used for communication between
     // readResource goroutine and writeResource function
-    recv := make(chan string)
+    recv := make(chan *Resource)
 
     mapping := Mapper.(map[string]interface{})
     temp := (mapping[req.URL.Path]).([]interface{})
-    var numFiles int
     for order, v := range temp {
         numFiles = order
         fileSlice := v.(map[string]interface{})
         for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
             // multiple I/O operations happen in parallel
-            go readResource(recv, basePath + filePath, int(minify.(float64)))
+            go readResource(recv, basePath + filePath, int(minify.(float64)), order)
         }
     }
 
     io.WriteString(w, concatResource(recv, numFiles + 1) + "\n")
-    fmt.Printf("Request- %s %s\n", req.URL, time.Now())
+    fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
 }
 
 func MainPage(w http.ResponseWriter, req *http.Request) {
