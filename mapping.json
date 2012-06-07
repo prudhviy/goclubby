@@ -2,13 +2,13 @@
 	"/file1.js" : [
 		{ "/test/a.js" : false },
 		{ "/test/b.js" : false },
-		{ "/test/Browser.js" : false },
-		{ "/test/pp_domUtils.js" : false }
+		{ "/test/pp/Browser.js" : false },
+		{ "/test/pp/pp_domUtils.js" : false }
 	],
 	"/file2.js" : [
-		{ "/test/pp_xmlhttp.js" : false },
-		{ "/test/pp_opendoc.js" : false },
-		{ "/test/pp_domUtils.js" : false }
+		{ "/test/pp/pp_xmlhttp.js" : false },
+		{ "/test/pp/pp_opendoc.js" : false },
+		{ "/test/pp/pp_domUtils.js" : false }
 	],
 	"/file3.js" : [
 		{ "/test/a.js" : false },
