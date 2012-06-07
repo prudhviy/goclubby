@@ -6,9 +6,9 @@
 		{ "/test/pp/pp_domUtils.js" : false }
 	],
 	"/file2.js" : [
-		{ "/test/pp/pp_xmlhttp.js" : false },
-		{ "/test/pp/pp_opendoc.js" : false },
-		{ "/test/pp/pp_domUtils.js" : false }
+		{ "/test/pp/pp_xmlhttp.js" : true },
+		{ "/test/pp/pp_opendoc.js" : true },
+		{ "/test/pp/pp_domUtils.js" : true }
 	],
 	"/file3.js" : [
 		{ "/test/a.js" : false },
