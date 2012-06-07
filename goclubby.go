@@ -22,7 +22,9 @@ var Mapper interface {
 
 }
 
-var compilationLevel = map[int]string{1: "WHITESPACE_ONLY", 2: "SIMPLE_OPTIMIZATIONS"}
+var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
+                                      2: "SIMPLE_OPTIMIZATIONS",
+                                      3: "ADVANCED_OPTIMIZATIONS"}
 
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
