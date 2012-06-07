@@ -3,12 +3,14 @@ TO DO -
 	gzip/deflate compression
 	virtual hosts support
 	closure/JSMIN minification support
-	set headers support - content-length, content-encoding etc..
+	set headers support
 	global server config and mapping config(per file content-encoding)
-	server mode(in-memory cache) and development mode
+	server mode(disk backed cache) and development mode(runtime concatination)
 
 low priority -
 	
 	all configs to be shown on http://127.0.0.1:8000/config/
 	image sprites
+	conditional concatination - vb scripts for IE only
+	runtime config change - pkg sync
 
