@@ -22,6 +22,8 @@ var Mapper interface {
 
 }
 
+var compilationLevel = map[int]string{1: "WHITESPACE_ONLY", 2: "SIMPLE_OPTIMIZATIONS"}
+
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
 var basePath, pwdError = os.Getwd()
@@ -43,22 +45,9 @@ Open up console and test
 </html>
 `
 
-func readResource(out chan string, filePath string, minify bool) {
+func readResource(out chan string, filePath string, minify int) {
 
-    if minify {
-        // get the minified byte data using closure compiler
-        resourceData, err := exec.Command("java", "-jar", 
-                                          "closure/compiler.jar", 
-                                          "--compilation_level", 
-                                          "WHITESPACE_ONLY",
-                                          "--js", filePath ).Output()
-        if err != nil {
-            log.Fatal(err)
-        }
-
-        out <- string(resourceData)
-
-    } else {
+    if minify == 0 {
         // read the byte data normally
         resourceData, err := ioutil.ReadFile(filePath)
         if err != nil {
@@ -66,7 +55,18 @@ func readResource(out chan string, filePath string, minify bool) {
         }
 
         out <- string(resourceData)
-        
+    } else {
+        // get the minified byte data using closure compiler
+        resourceData, err := exec.Command("java", "-jar", 
+                                          "closure/compiler.jar", 
+                                          "--compilation_level", 
+                                          compilationLevel[minify],
+                                          "--js", filePath ).Output()
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        out <- string(resourceData)
     }
 }
 
@@ -98,13 +98,13 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     mapping := Mapper.(map[string]interface{})
     temp := (mapping[req.URL.Path]).([]interface{})
     var numFiles int
-    for k, v := range temp {
-        numFiles = k
+    for order, v := range temp {
+        numFiles = order
         fileSlice := v.(map[string]interface{})
         for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
             // multiple I/O operations happen in parallel
-            go readResource(recv, basePath + filePath, minify.(bool))    
+            go readResource(recv, basePath + filePath, int(minify.(float64)))
         }
     }
 
