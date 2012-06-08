@@ -41,9 +41,9 @@ var mainPage = `<!DOCTYPE html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>goclubby test page</title>
-<script type="text/javascript" src="/file1.js"></script>
-<script type="text/javascript" src="/file2.js"></script>
-<script type="text/javascript" src="/file3.js"></script>
+<script type="text/javascript" src="/js/file1.js"></script>
+<script type="text/javascript" src="/js/file2.js"></script>
+<script type="text/javascript" src="/js/file3.js"></script>
 </head>
 <body>
 <b>
@@ -148,6 +148,7 @@ func readConfig() {
     mappingData, err := ioutil.ReadFile("mapping.json")
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
+       os.Exit(1)
     }
     //fmt.Printf("Mapping json: %s\n\n", mappingData)
 
@@ -155,6 +156,7 @@ func readConfig() {
     err = json.Unmarshal(mappingData, &Mapper)
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
+       os.Exit(1)
     }
 
     //fmt.Printf("Resource Mapping: %#v\n\n", Mapper.(map[string]interface{}))
@@ -172,9 +174,7 @@ func main() {
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
     http.HandleFunc("/", MainPage)
-    http.HandleFunc("/file1.js", serverInit)
-    http.HandleFunc("/file2.js", serverInit)
-    http.HandleFunc("/file3.js", serverInit)
+    http.HandleFunc("/js/", serverInit)
     err := http.ListenAndServe("0.0.0.0:8000", nil)
     if err != nil {
         log.Fatal("In main(): ", err)
