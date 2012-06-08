@@ -1,16 +1,16 @@
 {
-	"/file1.js" : [
+	"/js/file1.js" : [
 		{ "/test/a.js" : 0 },
 		{ "/test/b.js" : 0 },
 		{ "/test/pp/Browser.js" : 0 },
 		{ "/test/pp/pp_domUtils.js" : 0 }
 	],
-	"/file2.js" : [
+	"/js/file2.js" : [
 		{ "/test/pp/pp_xmlhttp.js" : 1 },
 		{ "/test/pp/pp_opendoc.js" : 1 },
 		{ "/test/pp/pp_domUtils.js" : 2 }
 	],
-	"/file3.js" : [
+	"/js/file3.js" : [
 		{ "/test/a.js" : 0 },
 		{ "/test/b.js" : 0 }
 	]
