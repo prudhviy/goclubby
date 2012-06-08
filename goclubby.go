@@ -113,7 +113,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     mapping := Mapper.(map[string]interface{})
     resourceList, ok := mapping[req.URL.Path]
     if !ok {
-        fmt.Printf("The mapping file key does'nt exist!\n")
+        fmt.Printf("The requested resource does'nt exist in mapping.json!\n")
         os.Exit(1)
     }
     temp := (resourceList).([]interface{})
