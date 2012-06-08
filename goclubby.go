@@ -111,7 +111,12 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     recv := make(chan *Resource)
 
     mapping := Mapper.(map[string]interface{})
-    temp := (mapping[req.URL.Path]).([]interface{})
+    resourceList, ok := mapping[req.URL.Path]
+    if !ok {
+        fmt.Printf("The mapping file key does'nt exist!\n")
+        os.Exit(1)
+    }
+    temp := (resourceList).([]interface{})
     for order, v := range temp {
         numFiles = order
         fileSlice := v.(map[string]interface{})
