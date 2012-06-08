@@ -61,6 +61,7 @@ func readResource(out chan *Resource, filePath string, minify int, order int) {
         resourceData, err := ioutil.ReadFile(filePath)
         if err != nil {
            fmt.Printf("In %s file, Error occured\n", filePath)
+           os.Exit(1)
         }
 
         (*msg).resourceData = resourceData
@@ -73,6 +74,7 @@ func readResource(out chan *Resource, filePath string, minify int, order int) {
                                           "--js", filePath ).Output()
         if err != nil {
             log.Fatal(err)
+            os.Exit(1)
         }
 
         (*msg).resourceData = resourceData
