@@ -107,10 +107,6 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
     w.Header().Set("Content-Type", "application/javascript")
-    var numFiles int
-    // same channel is used for communication between
-    // readResource goroutine and writeResource function
-    recv := make(chan *Resource)
 
     mapping := Mapper.(map[string]interface{})
     resourceList, ok := mapping[req.URL.Path]
@@ -119,8 +115,12 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         os.Exit(1)
     }
     temp := (resourceList).([]interface{})
+    numFiles := len(temp)
+    // same channel is used for communication between
+    // readResource goroutine and writeResource function
+    // and it is a buffered channel for asynchronous messaging
+    recv := make(chan *Resource, numFiles)
     for order, v := range temp {
-        numFiles = order
         fileSlice := v.(map[string]interface{})
         for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
@@ -128,8 +128,8 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
             go readResource(recv, basePath + filePath, int(minify.(float64)), order)
         }
     }
-
-    clubbedResource := concatResource(recv, numFiles + 1)
+    
+    clubbedResource := concatResource(recv, numFiles)
     response := string(bytes.Join(clubbedResource, []byte{}))
 
     io.WriteString(w, response)
