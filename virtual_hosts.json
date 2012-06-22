@@ -1,0 +1,23 @@
+{
+	"default" : {
+			"mapping" : "./mapping.json",
+			"domain"  : ".projectplace.com"
+		},
+	"hosts" : {
+		"localhost" : {
+			"root"    : "test/localhost/",
+			"mode"    : "dev",
+			"mapping" : "default"
+		},
+		"bha" : {
+			"root"    : "test/bha/",
+			"mode"    : "dev",
+			"mapping" : "default"
+		},
+		"kls" : {
+			"root"    : "test/kls/",
+			"mode"    : "dev",
+			"mapping" : "default"
+		}
+	}
+}
