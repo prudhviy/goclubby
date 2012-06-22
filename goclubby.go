@@ -11,7 +11,7 @@ import (
     "os/exec"
     
     "log"
-    "fmt" 
+    "fmt"
     "encoding/json"
 
     "runtime"
@@ -19,14 +19,17 @@ import (
     //"reflect"
 )
 
-var Mapper interface {
-
-}
+// interface for mapping.json
+var Mapper interface {}
+// interface for virtual_hosts.json
+var VirtualHoster interface {}
 
 type Resource struct {
     resourceData []byte
     order          int
 }
+
+//var hostConfigs[string]string
 
 var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
                                       2: "SIMPLE_OPTIMIZATIONS",
@@ -143,7 +146,7 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
     io.WriteString(w, mainPage)
 }
 
-func readConfig() {
+func readResourceMapping() {
     // read configuration from mapping.json
     mappingData, err := ioutil.ReadFile("mapping.json")
     if err != nil {
@@ -162,13 +165,39 @@ func readConfig() {
     //fmt.Printf("Resource Mapping: %#v\n\n", Mapper.(map[string]interface{}))
 }
 
+func readHostsConfig() {
+    //var hostConfigs []interface{}
+
+    // read configuration from virtual_hosts.json
+    hostsData, err := ioutil.ReadFile("virtual_hosts.json")
+    if err != nil {
+       fmt.Printf("Error occured in %s\n", err)
+       os.Exit(1)
+    }
+    //fmt.Printf("Virtual Hosts json: %s\n\n", virtualHosts)
+
+    // decode json to Mapping data structure in go
+    err = json.Unmarshal(hostsData, &VirtualHoster)
+    if err != nil {
+       fmt.Printf("Error occured in %s\n", err)
+       os.Exit(1)
+    }
+
+    fmt.Printf("Host Mapping: %#v\n\n", VirtualHoster.(map[string]interface{}))
+
+    configMap := VirtualHoster.(map[string]interface{})
+    fmt.Printf("default Mapping: %#v\n\n", configMap["default"])
+
+}
+
 func main() {
 
     // make sure app uses all cores
     flag.Parse()
     runtime.GOMAXPROCS(*numCores)
 
-    readConfig()
+    readResourceMapping()
+    readHostsConfig()
 
     fmt.Printf("goclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
