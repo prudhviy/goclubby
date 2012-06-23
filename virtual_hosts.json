@@ -1,23 +1,22 @@
 {
-	"default" : {
-			"mapping" : "./mapping.json",
-			"domain"  : ".projectplace.com"
-		},
-	"hosts" : {
-		"localhost" : {
-			"root"    : "test/localhost/",
-			"mode"    : "dev",
-			"mapping" : "default"
-		},
-		"bha" : {
-			"root"    : "test/bha/",
-			"mode"    : "dev",
-			"mapping" : "default"
-		},
-		"kls" : {
-			"root"    : "test/kls/",
-			"mode"    : "dev",
-			"mapping" : "default"
-		}
+	"projectplace.com" : {
+		"root"    : "test/",
+		"mode"    : "dev",
+		"mapping" : "./mapping.json",
+	},
+	"localhost" : {
+		"root"    : "test/localhost/",
+		"mode"    : "dev",
+		"mapping" : "./mapping.json"
+	},
+	"bha.projectplace.com" : {
+		"root"    : "test/bha/",
+		"mode"    : "dev",
+		"mapping" : "./mapping.json"
+	},
+	"kls.projectplace.com" : {
+		"root"    : "test/kls/",
+		"mode"    : "dev",
+		"mapping" : "./mapping.json"
 	}
 }
