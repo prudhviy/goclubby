@@ -24,12 +24,12 @@ var Mapper interface {}
 // interface for virtual_hosts.json
 var VirtualHoster interface {}
 
+var HostMapper = make([]interface{})
+
 type Resource struct {
     resourceData []byte
     order          int
 }
-
-//var hostConfigs[string]string
 
 var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
                                       2: "SIMPLE_OPTIMIZATIONS",
@@ -128,7 +128,8 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
         for filePath, minify := range fileSlice {
             // create a goroutine on every I/O operation so that
             // multiple I/O operations happen in parallel
-            go readResource(recv, basePath + filePath, int(minify.(float64)), order)
+            go readResource(recv, basePath + filePath,
+                             int(minify.(float64)), order)
         }
     }
     
@@ -166,15 +167,12 @@ func readResourceMapping() {
 }
 
 func readHostsConfig() {
-    //var hostConfigs []interface{}
-
     // read configuration from virtual_hosts.json
     hostsData, err := ioutil.ReadFile("virtual_hosts.json")
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
-    //fmt.Printf("Virtual Hosts json: %s\n\n", virtualHosts)
 
     // decode json to Mapping data structure in go
     err = json.Unmarshal(hostsData, &VirtualHoster)
@@ -182,12 +180,6 @@ func readHostsConfig() {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
-
-    fmt.Printf("Host Mapping: %#v\n\n", VirtualHoster.(map[string]interface{}))
-
-    configMap := VirtualHoster.(map[string]interface{})
-    fmt.Printf("default Mapping: %#v\n\n", configMap["default"])
-
 }
 
 func main() {
