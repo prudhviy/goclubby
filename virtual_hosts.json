@@ -2,7 +2,7 @@
 	"projectplace.com" : {
 		"root"    : "test/",
 		"mode"    : "dev",
-		"mapping" : "./mapping.json",
+		"mapping" : "./mapping.json"
 	},
 	"localhost" : {
 		"root"    : "test/localhost/",
