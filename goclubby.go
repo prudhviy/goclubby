@@ -24,12 +24,18 @@ var Mapper interface {}
 // interface for virtual_hosts.json
 var VirtualHoster interface {}
 
-var HostMapper = make([]interface{})
+//var HostMapper = make([]interface{})
 
 type Resource struct {
     resourceData []byte
     order          int
 }
+
+type HostConfig struct {
+    root, mode, mapping string
+}
+
+var hc map[string]HostConfig = make(map[string]HostConfig)
 
 var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
                                       2: "SIMPLE_OPTIMIZATIONS",
@@ -180,6 +186,25 @@ func readHostsConfig() {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
+
+    configMap := VirtualHoster.(map[string]interface{})
+    hostConfig := new(HostConfig)
+    for domain, setting := range configMap {
+        for k, v :=range setting.(map[string]interface{}) {
+            switch field := k; field {
+                case "root" : (*hostConfig).root = v.(string)
+                case "mode" : (*hostConfig).mode = v.(string)
+                case "mapping" : (*hostConfig).mapping = v.(string)
+                default :
+                    fmt.Printf("Unknown config key, " + 
+                        "Please check the syntax and spellings: %s\n", field)
+                    os.Exit(1)
+            }
+        }
+        hc[domain] = *hostConfig
+    }
+
+    fmt.Printf("host config: %#v\n\n", hc)
 }
 
 func main() {
