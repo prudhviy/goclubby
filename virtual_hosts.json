@@ -6,7 +6,7 @@
 	},
 	"localhost" : {
 		"root"    : "test/localhost/",
-		"mode"    : "dev",
+		"mode"    : "production",
 		"mapping" : "./mapping.json"
 	},
 	"bha.projectplace.com" : {
