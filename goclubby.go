@@ -21,21 +21,36 @@ import (
 
 // interface for mapping.json
 var Mapper interface {}
+
 // interface for virtual_hosts.json
 var VirtualHoster interface {}
 
-//var HostMapper = make([]interface{})
-
 type Resource struct {
     resourceData []byte
-    order          int
+    order        int
 }
 
 type HostConfig struct {
     root, mode, mapping string
 }
 
-var hc map[string]HostConfig = make(map[string]HostConfig)
+type ResourceProperty struct {
+    resourcePath    string
+    minifyLevel     int
+}
+
+type HostMapping struct {
+    clubbedResourcePath string
+    resources           []ResourceProperty
+}
+
+// key - host
+// value - HostMapping struct
+var hostMappings map[string]HostMapping = make(map[string]HostMapping)
+
+// key - host
+// value - HostConfig struct
+var hostConfigs map[string]HostConfig = make(map[string]HostConfig)
 
 var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
                                       2: "SIMPLE_OPTIMIZATIONS",
@@ -153,9 +168,9 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
     io.WriteString(w, mainPage)
 }
 
-func readResourceMapping() {
+func readResourceMapping(mappingPath string) {
     // read configuration from mapping.json
-    mappingData, err := ioutil.ReadFile("mapping.json")
+    mappingData, err := ioutil.ReadFile(mappingPath)
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
@@ -180,7 +195,7 @@ func readHostsConfig() {
        os.Exit(1)
     }
 
-    // decode json to Mapping data structure in go
+    // decode json to VirtualHost data structure in go
     err = json.Unmarshal(hostsData, &VirtualHoster)
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
@@ -190,7 +205,7 @@ func readHostsConfig() {
     configMap := VirtualHoster.(map[string]interface{})
     hostConfig := new(HostConfig)
     for domain, setting := range configMap {
-        for k, v :=range setting.(map[string]interface{}) {
+        for k, v := range setting.(map[string]interface{}) {
             switch field := k; field {
                 case "root" : (*hostConfig).root = v.(string)
                 case "mode" : (*hostConfig).mode = v.(string)
@@ -201,10 +216,59 @@ func readHostsConfig() {
                     os.Exit(1)
             }
         }
-        hc[domain] = *hostConfig
+        hostConfigs[domain] = *hostConfig
     }
+    //fmt.Printf("host config: %#v\n\n", hostConfigs)
+}
+func hostMappingSetup() {
+    hostMapping := new(HostMapping)
+    resource_property := new(ResourceProperty)
+    
+    for host, config := range hostConfigs {
+        readResourceMapping(config.mapping)
 
-    fmt.Printf("host config: %#v\n\n", hc)
+        for clubbedResource, resourceList := range Mapper.(map[string]interface{}) {
+            (*hostMapping).clubbedResourcePath = clubbedResource
+            resource_List := resourceList.([]interface{})
+            var resourcePropertySlice []ResourceProperty = 
+                                    make([]ResourceProperty, len(resource_List))
+            for order, resourceProperty := range resource_List {
+                
+                for resourcePath, minify := range resourceProperty.(map[string]interface{}) {
+                    (*resource_property).resourcePath = resourcePath
+                    (*resource_property).minifyLevel = int(minify.(float64))
+                }
+                resourcePropertySlice[order] = *resource_property
+                 
+            }
+            (*hostMapping).resources = resourcePropertySlice
+            hostMappings[host] = *hostMapping
+        }
+    }
+}
+
+func hostModeSetup() {
+    var mapping HostMapping
+    var resources []ResourceProperty
+    var recv chan *Resource
+    var clubbedResource [][]byte
+
+    for host, config := range hostConfigs {
+        if(config.mode == "production") {
+            mapping = hostMappings[host]
+            fmt.Printf("hostMappings: %#v\n\n", mapping)
+            resources = mapping.resources
+            recv = make(chan *Resource, len(resources))
+            for order, resourceProperty := range resources {
+                go readResource(recv, basePath + resourceProperty.resourcePath,
+                             resourceProperty.minifyLevel, order)
+            }
+            clubbedResource = concatResource(recv, len(resources))
+            fmt.Printf("write file: %#v\n\n", "./tmp" + mapping.clubbedResourcePath)
+            ioutil.WriteFile("./tmp" + mapping.clubbedResourcePath, 
+                                bytes.Join(clubbedResource, []byte{}), 0666)
+        }
+    }
 }
 
 func main() {
@@ -213,9 +277,10 @@ func main() {
     flag.Parse()
     runtime.GOMAXPROCS(*numCores)
 
-    readResourceMapping()
     readHostsConfig()
-
+    hostMappingSetup()
+    hostModeSetup()
+    os.Exit(1)
     fmt.Printf("goclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
