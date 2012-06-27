@@ -39,9 +39,13 @@ type ResourceProperty struct {
     minifyLevel     int
 }
 
-type HostMapping struct {
+type ResourceMapping struct {
     clubbedResourcePath string
     resources           []ResourceProperty
+}
+
+type HostMapping struct {
+    clubbedResources []ResourceMapping
 }
 
 // key - host
@@ -222,16 +226,20 @@ func readHostsConfig() {
 }
 func hostMappingSetup() {
     hostMapping := new(HostMapping)
+    resourceMapping := new(ResourceMapping)
     resource_property := new(ResourceProperty)
-    
+    var count int
+
     for host, config := range hostConfigs {
         readResourceMapping(config.mapping)
-
+        var resourceMappingSlice []ResourceMapping = 
+                make([]ResourceMapping, len(Mapper.(map[string]interface{})))
+        count = 0
         for clubbedResource, resourceList := range Mapper.(map[string]interface{}) {
-            (*hostMapping).clubbedResourcePath = clubbedResource
+            (*resourceMapping).clubbedResourcePath = clubbedResource
             resource_List := resourceList.([]interface{})
             var resourcePropertySlice []ResourceProperty = 
-                                    make([]ResourceProperty, len(resource_List))
+                                make([]ResourceProperty, len(resource_List))
             for order, resourceProperty := range resource_List {
                 
                 for resourcePath, minify := range resourceProperty.(map[string]interface{}) {
@@ -241,32 +249,35 @@ func hostMappingSetup() {
                 resourcePropertySlice[order] = *resource_property
                  
             }
-            (*hostMapping).resources = resourcePropertySlice
-            hostMappings[host] = *hostMapping
+            (*resourceMapping).resources = resourcePropertySlice
+            resourceMappingSlice[count] = *resourceMapping
+            count = count + 1
         }
+        (*hostMapping).clubbedResources = resourceMappingSlice
+        hostMappings[host] = *hostMapping
     }
 }
 
 func hostModeSetup() {
     var mapping HostMapping
-    var resources []ResourceProperty
     var recv chan *Resource
     var clubbedResource [][]byte
 
     for host, config := range hostConfigs {
         if(config.mode == "production") {
             mapping = hostMappings[host]
-            fmt.Printf("hostMappings: %#v\n\n", mapping)
-            resources = mapping.resources
-            recv = make(chan *Resource, len(resources))
-            for order, resourceProperty := range resources {
-                go readResource(recv, basePath + resourceProperty.resourcePath,
-                             resourceProperty.minifyLevel, order)
+            for _, resourceMapping := range mapping.clubbedResources {
+                recv = make(chan *Resource, len(resourceMapping.resources))
+                for order, resourceProperty := range resourceMapping.resources {
+                    go readResource(recv, basePath + resourceProperty.resourcePath,
+                                 resourceProperty.minifyLevel, order)
+                }
+                clubbedResource = concatResource(recv, len(resourceMapping.resources))
+                fmt.Printf("Production Mode- write file: %#v\n\n",
+                             "./tmp" + resourceMapping.clubbedResourcePath)
+                ioutil.WriteFile("./tmp" + resourceMapping.clubbedResourcePath, 
+                                    bytes.Join(clubbedResource, []byte{}), 0666)
             }
-            clubbedResource = concatResource(recv, len(resources))
-            fmt.Printf("write file: %#v\n\n", "./tmp" + mapping.clubbedResourcePath)
-            ioutil.WriteFile("./tmp" + mapping.clubbedResourcePath, 
-                                bytes.Join(clubbedResource, []byte{}), 0666)
         }
     }
 }
