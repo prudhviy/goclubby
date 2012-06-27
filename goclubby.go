@@ -12,6 +12,7 @@ import (
     
     "log"
     "fmt"
+    "strings"
     "encoding/json"
 
     "runtime"
@@ -63,6 +64,7 @@ var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
 var basePath, _ = os.Getwd()
+var prodDir = "./tmp"
 
 var testPageHTML = `<!DOCTYPE html>
 <html>
@@ -80,6 +82,7 @@ Open up console and test
 </body>
 </html>
 `
+
 func testPage(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
@@ -137,9 +140,13 @@ func concatResource(in chan *Resource, numFiles int) (clubbedResource [][]byte) 
 
 func getClubbedResource(resources []ResourceProperty) (clubbed_resource []byte) {
     var recv chan *Resource
-
+    // same channel is used for communication between
+    // readResource goroutine and writeResource function
+    // and it is a buffered channel for asynchronous messaging
     recv = make(chan *Resource, len(resources))
     for order, resourceProperty := range resources {
+        // create a goroutine on every I/O operation so that
+        // multiple I/O operations happen in parallel
         go readResource(recv, basePath + resourceProperty.resourcePath,
                      resourceProperty.minifyLevel, order)
     }
@@ -153,31 +160,32 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
     w.Header().Set("Content-Type", "application/javascript")
+    response := ""
 
-    mapping := Mapper.(map[string]interface{})
-    resourceList, ok := mapping[req.URL.Path]
-    if !ok {
-        fmt.Printf("The requested resource does'nt exist in mapping.json!\n")
-        os.Exit(1)
-    }
-    temp := (resourceList).([]interface{})
-    numFiles := len(temp)
-    // same channel is used for communication between
-    // readResource goroutine and writeResource function
-    // and it is a buffered channel for asynchronous messaging
-    recv := make(chan *Resource, numFiles)
-    for order, v := range temp {
-        fileSlice := v.(map[string]interface{})
-        for filePath, minify := range fileSlice {
-            // create a goroutine on every I/O operation so that
-            // multiple I/O operations happen in parallel
-            go readResource(recv, basePath + filePath,
-                             int(minify.(float64)), order)
+    hostPort := strings.Split(req.Host, ":")
+    host := hostPort[0]
+    if(!strings.Contains(host, ".")) {
+        hostConfig := hostConfigs[host]
+        if(hostConfig.mode == "dev"){
+            hostMapping := hostMappings[host]
+            for _, resourceMapping := range hostMapping.clubbedResources {
+                if(resourceMapping.clubbedResourcePath == req.URL.Path) {
+                    response = string(getClubbedResource(resourceMapping.resources))
+                } else {
+                    fmt.Printf("The requested resource " + 
+                                "does'nt exist in %s mapping.json!\n", host)
+                    os.Exit(1)
+                }
+            }
+        } else {
+            resourceData, err := ioutil.ReadFile(prodDir + req.URL.Path)
+            if err != nil {
+               fmt.Printf("In %s file, Error occured\n", req.URL.Path)
+               os.Exit(1)
+            }
+            response = string(resourceData)
         }
     }
-    
-    clubbedResource := concatResource(recv, numFiles)
-    response := string(bytes.Join(clubbedResource, []byte{}))
 
     io.WriteString(w, response)
     fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
@@ -277,8 +285,8 @@ func hostModeSetup() {
                 clubbedResource = getClubbedResource(resourceMapping.resources)
 
                 fmt.Printf("Production Mode for %s - write file: %#v\n\n",
-                            host, "./tmp" + resourceMapping.clubbedResourcePath)
-                ioutil.WriteFile("./tmp" + resourceMapping.clubbedResourcePath,
+                            host, prodDir + resourceMapping.clubbedResourcePath)
+                ioutil.WriteFile(prodDir + resourceMapping.clubbedResourcePath,
                                      clubbedResource, 0666)
             }
         }
