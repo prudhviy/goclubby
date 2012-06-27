@@ -64,7 +64,7 @@ var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
 var basePath, _ = os.Getwd()
 
-var mainPage = `<!DOCTYPE html>
+var testPage = `<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -81,35 +81,33 @@ Open up console and test
 </html>
 `
 
-func readResource(out chan *Resource, filePath string, minify int, order int) {
+func readResource(out chan *Resource, resourcePath string, minify int, order int) {
     var msg *Resource = new(Resource)
     
     if minify == 0 {
         // read the byte data normally
-        resourceData, err := ioutil.ReadFile(filePath)
+        resourceData, err := ioutil.ReadFile(resourcePath)
         if err != nil {
-           fmt.Printf("In %s file, Error occured\n", filePath)
+           fmt.Printf("In %s file, Error occured\n", resourcePath)
            os.Exit(1)
         }
-
         (*msg).resourceData = resourceData
+
     } else {
         // get the minified byte data using closure compiler
         resourceData, err := exec.Command("java", "-jar", 
                                           "closure/compiler.jar", 
                                           "--compilation_level", 
                                           compilationLevel[minify],
-                                          "--js", filePath ).Output()
+                                          "--js", resourcePath ).Output()
         if err != nil {
             log.Fatal(err)
             os.Exit(1)
         }
-
         (*msg).resourceData = resourceData
     }
 
     (*msg).order = order
-
     out <- msg
 }
 
@@ -128,6 +126,20 @@ func concatResource(in chan *Resource, numFiles int) (clubbedResource [][]byte) 
         }
     }
 
+    return
+}
+
+func getClubbedResource(resources []ResourceProperty) (clubbed_resource []byte) {
+    var recv chan *Resource
+
+    recv = make(chan *Resource, len(resources))
+    for order, resourceProperty := range resources {
+        go readResource(recv, basePath + resourceProperty.resourcePath,
+                     resourceProperty.minifyLevel, order)
+    }
+
+    clubbed_resource = bytes.Join(concatResource(recv, len(resources)),
+                                         []byte{})
     return
 }
 
@@ -169,7 +181,7 @@ func MainPage(w http.ResponseWriter, req *http.Request) {
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
     w.Header().Set("Content-Type", "text/html; charset=iso-8859-1")
-    io.WriteString(w, mainPage)
+    io.WriteString(w, testPage)
 }
 
 func readResourceMapping(mappingPath string) {
@@ -179,16 +191,12 @@ func readResourceMapping(mappingPath string) {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
-    //fmt.Printf("Mapping json: %s\n\n", mappingData)
-
     // decode json to Mapping data structure in go
     err = json.Unmarshal(mappingData, &Mapper)
     if err != nil {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
-
-    //fmt.Printf("Resource Mapping: %#v\n\n", Mapper.(map[string]interface{}))
 }
 
 func readHostsConfig() {
@@ -198,7 +206,6 @@ func readHostsConfig() {
        fmt.Printf("Error occured in %s\n", err)
        os.Exit(1)
     }
-
     // decode json to VirtualHost data structure in go
     err = json.Unmarshal(hostsData, &VirtualHoster)
     if err != nil {
@@ -235,11 +242,13 @@ func hostMappingSetup() {
         var resourceMappingSlice []ResourceMapping = 
                 make([]ResourceMapping, len(Mapper.(map[string]interface{})))
         count = 0
+    
         for clubbedResource, resourceList := range Mapper.(map[string]interface{}) {
             (*resourceMapping).clubbedResourcePath = clubbedResource
             resource_List := resourceList.([]interface{})
             var resourcePropertySlice []ResourceProperty = 
                                 make([]ResourceProperty, len(resource_List))
+    
             for order, resourceProperty := range resource_List {
                 
                 for resourcePath, minify := range resourceProperty.(map[string]interface{}) {
@@ -260,30 +269,24 @@ func hostMappingSetup() {
 
 func hostModeSetup() {
     var mapping HostMapping
-    var recv chan *Resource
-    var clubbedResource [][]byte
+    var clubbedResource []byte
 
     for host, config := range hostConfigs {
         if(config.mode == "production") {
             mapping = hostMappings[host]
             for _, resourceMapping := range mapping.clubbedResources {
-                recv = make(chan *Resource, len(resourceMapping.resources))
-                for order, resourceProperty := range resourceMapping.resources {
-                    go readResource(recv, basePath + resourceProperty.resourcePath,
-                                 resourceProperty.minifyLevel, order)
-                }
-                clubbedResource = concatResource(recv, len(resourceMapping.resources))
-                fmt.Printf("Production Mode- write file: %#v\n\n",
-                             "./tmp" + resourceMapping.clubbedResourcePath)
-                ioutil.WriteFile("./tmp" + resourceMapping.clubbedResourcePath, 
-                                    bytes.Join(clubbedResource, []byte{}), 0666)
+                clubbedResource = getClubbedResource(resourceMapping.resources)
+
+                fmt.Printf("Production Mode for %s - write file: %#v\n\n",
+                            host, "./tmp" + resourceMapping.clubbedResourcePath)
+                ioutil.WriteFile("./tmp" + resourceMapping.clubbedResourcePath,
+                                     clubbedResource, 0666)
             }
         }
     }
 }
 
 func main() {
-
     // make sure app uses all cores
     flag.Parse()
     runtime.GOMAXPROCS(*numCores)
@@ -291,7 +294,7 @@ func main() {
     readHostsConfig()
     hostMappingSetup()
     hostModeSetup()
-    os.Exit(1)
+
     fmt.Printf("goclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
