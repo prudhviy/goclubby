@@ -64,7 +64,7 @@ var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
 var basePath, _ = os.Getwd()
 
-var testPage = `<!DOCTYPE html>
+var testPageHTML = `<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -80,6 +80,12 @@ Open up console and test
 </body>
 </html>
 `
+func testPage(w http.ResponseWriter, req *http.Request) {
+    w.Header().Set("Server", "goclubby/0.1")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Content-Type", "text/html; charset=iso-8859-1")
+    io.WriteString(w, testPageHTML)
+}
 
 func readResource(out chan *Resource, resourcePath string, minify int, order int) {
     var msg *Resource = new(Resource)
@@ -175,13 +181,6 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
 
     io.WriteString(w, response)
     fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
-}
-
-func MainPage(w http.ResponseWriter, req *http.Request) {
-    w.Header().Set("Server", "goclubby/0.1")
-    w.Header().Set("Cache-Control", "no-cache")
-    w.Header().Set("Content-Type", "text/html; charset=iso-8859-1")
-    io.WriteString(w, testPage)
 }
 
 func readResourceMapping(mappingPath string) {
@@ -298,7 +297,7 @@ func main() {
     fmt.Printf("goclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
-    http.HandleFunc("/", MainPage)
+    http.HandleFunc("/", testPage)
     http.HandleFunc("/js/", serverInit)
     err := http.ListenAndServe("0.0.0.0:8000", nil)
     if err != nil {
