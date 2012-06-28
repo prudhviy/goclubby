@@ -166,6 +166,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     host := hostPort[0]
     if(!strings.Contains(host, ".")) {
         hostConfig := hostConfigs[host]
+        w.Header().Set("X-mode", hostConfig.mode)
         if(hostConfig.mode == "dev"){
             hostMapping := hostMappings[host]
             for _, resourceMapping := range hostMapping.clubbedResources {
