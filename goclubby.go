@@ -120,15 +120,15 @@ func readResource(out chan *Resource, resourcePath string, minify int, order int
     out <- msg
 }
 
-func concatResource(in chan *Resource, numFiles int) (clubbedResource [][]byte) {
+func concatResource(in chan *Resource, numResources int) (clubbedResource [][]byte) {
     count := 0
-    clubbedResource = make([][]byte, numFiles)
+    clubbedResource = make([][]byte, numResources)
 
     for resource := range in {
         count = count + 1
         clubbedResource[resource.order] = resource.resourceData
         
-        if count == numFiles {
+        if count == numResources {
             // close the channel so that for-loop stops 
             // listening for incoming items and breaks the loop 
             close(in)
