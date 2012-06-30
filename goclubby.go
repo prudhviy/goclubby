@@ -161,6 +161,9 @@ func getClubbedResource(resources []ResourceProperty) (clubbed_resource []byte) 
 }
 
 func serverInit(w http.ResponseWriter, req *http.Request) {
+    var readPath string
+    var md5Hash hash.Hash
+    
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
     w.Header().Set("Content-Type", "application/javascript")
@@ -171,7 +174,9 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
     if(!strings.Contains(host, ".")) {
         hostConfig := hostConfigs[host]
         w.Header().Set("X-mode", hostConfig.mode)
+
         if(hostConfig.mode == "dev"){
+            // Mode - dev
             hostMapping := hostMappings[host]
             for _, resourceMapping := range hostMapping.clubbedResources {
                 if(resourceMapping.clubbedResourcePath == req.URL.Path) {
@@ -183,9 +188,13 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
                 }
             }
         } else {
-            resourceData, err := ioutil.ReadFile(prodDir + req.URL.Path)
+            // Mode - production
+            md5Hash = md5.New()
+            md5Hash.Write([]byte(req.URL.Path))
+            readPath = prodDir + host + "/" + hex.EncodeToString(md5Hash.Sum(nil))
+            resourceData, err := ioutil.ReadFile(readPath)
             if err != nil {
-               fmt.Printf("In %s file, Error occured\n", req.URL.Path)
+               fmt.Printf("In %s file, Error occured\n", readPath)
                os.Exit(1)
             }
             response = string(resourceData)
