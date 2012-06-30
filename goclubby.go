@@ -184,8 +184,10 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
                 if(resourceMapping.clubbedResourcePath == req.URL.Path) {
                     response = string(getClubbedResource(resourceMapping.resources))
                 } else {
-                    fmt.Printf("The requested resource " + 
-                                "does'nt exist in %s mapping.json!\n", host)
+                    fmt.Printf("\n", host)
+                    fmt.Printf("##\nError - %s\nThe requested resource " + 
+                                "does'nt exist in %s's mapping.json!\n###\n",
+                                req.URL.Path, host)
                 }
             }
         } else {
