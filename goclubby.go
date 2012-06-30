@@ -101,7 +101,7 @@ func readResource(out chan *Resource, resourcePath string, minify int, order int
         // read the byte data normally
         resourceData, err := ioutil.ReadFile(resourcePath)
         if err != nil {
-           fmt.Printf("In %s file, Error occured\n", resourcePath)
+           fmt.Printf("##\nError - %s\n###\n", resourcePath, err)
            os.Exit(1)
         }
         (*msg).resourceData = resourceData
@@ -163,6 +163,8 @@ func getClubbedResource(resources []ResourceProperty) (clubbed_resource []byte) 
 func serverInit(w http.ResponseWriter, req *http.Request) {
     var readPath string
     var md5Hash hash.Hash
+    var resourceData []byte
+    var err error
     
     w.Header().Set("Server", "goclubby/0.1")
     w.Header().Set("Cache-Control", "no-cache")
@@ -184,25 +186,26 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
                 } else {
                     fmt.Printf("The requested resource " + 
                                 "does'nt exist in %s mapping.json!\n", host)
-                    os.Exit(1)
                 }
             }
         } else {
             // Mode - production
             md5Hash = md5.New()
             md5Hash.Write([]byte(req.URL.Path))
-            readPath = prodDir + host + "/" + hex.EncodeToString(md5Hash.Sum(nil))
-            resourceData, err := ioutil.ReadFile(readPath)
+            readPath = prodDir + host + "/" + 
+                                hex.EncodeToString(md5Hash.Sum(nil))
+            resourceData, err = ioutil.ReadFile(readPath)
             if err != nil {
-               fmt.Printf("In %s file, Error occured\n", readPath)
-               os.Exit(1)
+               fmt.Printf("##\nError - %s\n%s\n###\n", req.URL.Path, err)
             }
             response = string(resourceData)
         }
     }
 
     io.WriteString(w, response)
-    fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
+    if err == nil {
+        fmt.Printf("Response sent- %s %s\n", req.URL, time.Now())
+    }
 }
 
 func readResourceMapping(mappingPath string) {
@@ -307,7 +310,7 @@ func hostModeSetup() {
                 md5Hash = md5.New() 
                 md5Hash.Write([]byte(resourceMapping.clubbedResourcePath))
                 writePath = prodDir + host + "/" + hex.EncodeToString(md5Hash.Sum(nil))
-                fmt.Printf("Production Mode for %s - write file: %s\n\n", 
+                fmt.Printf("Production Mode for %s - write file: %s\n", 
                                                         host, writePath)
                 ioutil.WriteFile(writePath, clubbedResource, 0666)
             }
@@ -324,7 +327,7 @@ func main() {
     hostMappingSetup()
     hostModeSetup()
 
-    fmt.Printf("goclubby server running at " +
+    fmt.Printf("\ngoclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
 
     http.HandleFunc("/", testPage)
