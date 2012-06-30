@@ -10,10 +10,14 @@ import (
     "os"
     "os/exec"
     
+    "crypto/md5"
+    "hash"
+
     "log"
     "fmt"
     "strings"
     "encoding/json"
+    "encoding/hex"
 
     "runtime"
     "flag"
@@ -64,7 +68,7 @@ var compilationLevel = map[int]string{1: "WHITESPACE_ONLY",
 var numCores = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 
 var basePath, _ = os.Getwd()
-var prodDir = "./tmp"
+var prodDir = "./tmp/"
 
 var testPageHTML = `<!DOCTYPE html>
 <html>
@@ -278,17 +282,25 @@ func hostMappingSetup() {
 func hostModeSetup() {
     var mapping HostMapping
     var clubbedResource []byte
+    var err error
+    var writePath string
+    var md5Hash hash.Hash
 
     for host, config := range hostConfigs {
         if(config.mode == "production") {
+            err = os.Mkdir(prodDir + host, 0777)
+            if err != nil {
+                fmt.Printf("###\nWarning - %s\n###\n", err)
+            }
             mapping = hostMappings[host]
             for _, resourceMapping := range mapping.clubbedResources {
                 clubbedResource = getClubbedResource(resourceMapping.resources)
-
-                fmt.Printf("Production Mode for %s - write file: %#v\n\n",
-                            host, prodDir + resourceMapping.clubbedResourcePath)
-                ioutil.WriteFile(prodDir + resourceMapping.clubbedResourcePath,
-                                     clubbedResource, 0666)
+                md5Hash = md5.New() 
+                md5Hash.Write([]byte(resourceMapping.clubbedResourcePath))
+                writePath = prodDir + host + "/" + hex.EncodeToString(md5Hash.Sum(nil))
+                fmt.Printf("Production Mode for %s - write file: %s\n\n", 
+                                                        host, writePath)
+                ioutil.WriteFile(writePath, clubbedResource, 0666)
             }
         }
     }
