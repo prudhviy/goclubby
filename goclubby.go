@@ -196,7 +196,7 @@ func serverInit(w http.ResponseWriter, req *http.Request) {
                                 hex.EncodeToString(md5Hash.Sum(nil))
             resourceData, err = ioutil.ReadFile(readPath)
             if err != nil {
-               fmt.Printf("##\nError - %s\n%s\n###\n", req.URL.Path, err)
+               fmt.Printf("###\nError - %s\n%s\n###\n", req.URL.Path, err)
             }
             response = string(resourceData)
         }
