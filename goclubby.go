@@ -101,7 +101,7 @@ func readResource(out chan *Resource, resourcePath string, minify int, order int
         // read the byte data normally
         resourceData, err := ioutil.ReadFile(resourcePath)
         if err != nil {
-           fmt.Printf("##\nError - %s\n###\n", resourcePath, err)
+           fmt.Printf("###\nError - %s\n%s\n###\n", resourcePath, err)
            os.Exit(1)
         }
         (*msg).resourceData = resourceData
