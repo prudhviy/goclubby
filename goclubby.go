@@ -22,6 +22,8 @@ import (
     "runtime"
     "flag"
     //"reflect"
+
+    "github.com/howeyc/fsnotify"
 )
 
 // interface for mapping.json
@@ -318,6 +320,30 @@ func hostModeSetup() {
     }
 }
 
+func ExampleNewWatcher() {
+    watcher, err := fsnotify.NewWatcher()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    go func() {
+        for {
+            select {
+            case ev := <-watcher.Event:
+                log.Println("event:", ev)
+            case err := <-watcher.Error:
+                log.Println("error:", err)
+            }
+        }
+    }()
+
+    err = watcher.Watch("./tmp")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("watching ./tmp")
+}
+
 func main() {
     // make sure app uses all cores
     flag.Parse()
@@ -326,6 +352,7 @@ func main() {
     readHostsConfig()
     hostMappingSetup()
     hostModeSetup()
+    ExampleNewWatcher()
 
     fmt.Printf("\ngoclubby server running at " +
                "http://0.0.0.0:8000 on %d CPU cores\n", *numCores)
