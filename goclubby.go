@@ -337,11 +337,13 @@ func ExampleNewWatcher() {
         }
     }()
 
-    err = watcher.Watch("./tmp")
+    err = watcher.Watch("./tmp/localhost")
+    err = watcher.Watch("./tmp/a")
+    err = watcher.Watch("./tmp/b")
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("watching ./tmp")
+    fmt.Printf("watching ./tmp , ./tmp/a and ./tmp/b ")
 }
 
 func main() {
